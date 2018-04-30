@@ -2,11 +2,22 @@ body {
 	text-align: center;
 }
 
+#points {
+	font-size: 30px;
+	letter-spacing: 2px;
+}
+
+.score {
+	text-align: left;
+	height: 12vh;
+	margin-bottom: -20%;
+}
+
 .container {
+	max-width: 42%;
 	margin-left: 29%;
 	margin-right: 29%;
 	margin-bottom: -12vh;
-
 }
 
 .lives {
@@ -50,7 +61,6 @@ img {
 .modal-header {
 	background: #e9e9e9;
 	padding: 15px;
-	color: auto;
 }
 
 @keyframes modalopen {
