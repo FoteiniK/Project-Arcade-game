@@ -1,101 +1,130 @@
+/* jshint ignore:start */
+"use strict";
+/* jshint ignore:end */
+/*jshint esversion: 6 */
+/*jslint bitwise: true */
+
+
 //variable declaration
 let yEnemies = [60, 140, 220, 140, 60, 210];
 let hearts = document.getElementsByTagName('ul')[0];
-let lives = 3;
+let points = document.getElementById('points');
+let score = 0;
 
 
-// Enemies our player must avoid
-const Enemy = function(place, speed) {
-    this.y = place;
-    this.sprite = 'images/enemy-bug.png';
-    this.speed = speed;
-};
-// Draw the enemy on the screen, required method for game
-Enemy.prototype.render = function() {
-    ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
-};
-/*Every time a bug reaches the end of canvas,
-it starts over from a new random y from
-yEnemies array with different speed. */
-Enemy.prototype.update = function(dt) {
-    let i;
-    if (this.x < 505) {
-        this.x += dt * 15 * this.speed * Math.random();
-    } else {
-        i = Math.random() * yEnemies.length | 0 + 0;
-        this.y = yEnemies[i];
-        this.x = -100;
+//superclass Game,from which our Enemy and Player classes inherit some common
+//methods for displaying properly on canvas
+class Game {
+    constructor(x, y, image) {
+        this.x = x;
+        this.y = y;
+        this.image = image;
     }
-    //checks for collisions
-    collisionDet.call(this)
+    render() {
+        ctx.drawImage(Resources.get(this.image), this.x, this.y);
+    }
 }
 
+//Enemy class
+class Enemy extends Game {
+    constructor(x, y, image, speed) {
+        super(x, y, image, speed);
+        this.speed = speed;
+    }
+    /*Every time a bug reaches the end of canvas,
+    it starts over from a new random y from
+    yEnemies array with different speed. */
+    update(dt) {
+        let i;
+        if (this.x < 505) {
+            this.x += dt * 15 * this.speed * Math.random();
+        } else {
+            i = Math.random() * yEnemies.length | 0 + 0;
+            this.y = yEnemies[i];
+            this.x = -100;
+        }
+        //checks for collisions
+        /*function for collision detection from
+        https://stackoverflow.com/questions/2440377/javascript-collision-detection
+        based on pythagorean theorem*/
+        let a, b, c;
+        a = this.x - player.x;
+        b = this.y - player.y;
+        c = 70;
+        if (a * a + b * b <= c * c) {
+            player.x = 200;
+            player.y = 380;
+            player.checkLives();
+        }
+    }
+
+}
 
 // Now instantiate your objects.
 // Place all enemy objects in an array called allEnemies
-let enemy1 = new Enemy(60, 40);
-let enemy2 = new Enemy(140, 20);
-let enemy3 = new Enemy(220, 15);
+let enemy1 = new Enemy(-100, 140, 'images/enemy-bug.png', 50);
+let enemy2 = new Enemy(-100, 60, 'images/enemy-bug.png', 20);
+let enemy3 = new Enemy(-100, 220, 'images/enemy-bug.png', 30);
 let allEnemies = [enemy1, enemy2, enemy3];
-/*function for collision detection from
-https://stackoverflow.com/questions/2440377/javascript-collision-detection
-based on pythagorean theorem*/
-function collisionDet() {
-    let a, b, c;
-    a = this.x - player.x;
-    b = this.y - player.y;
-    c = 70;
-    if (a * a + b * b <= c * c) {
-        player.x = 200;
-        player.y = 380;
-        checkLives();
+
+
+//Player class
+class Player extends Game {
+    constructor(x, y, image, lives) {
+        super(x, y, image, lives);
+        this.lives = lives;
     }
+    update(dt) {
+        //adds 100 points each time the player reaches the water.If the score reaches 1000 points,
+        //a congratulate modal appears
+        if (this.y < 40) {
+            this.x = 200;
+            this.y = 380;
+            score += 100;
+            points.innerText = score;
+            if (score === 1000) {
+                this.image = 'images/gangsta.png';
+                openWinModal();
+            }
+        }
+
+    }
+    //this function is for player's movement using the up,down,left and right keys
+    handleInput(key) {
+        if (key === 'left' && this.x > 0) {
+            this.x -= 100;
+        } else if (key === 'right' && this.x < 400) {
+            this.x += 100;
+        } else if (key === 'up') {
+            this.y -= 80;
+        } else if (key === 'down' && this.y < 380) {
+            this.y += 80;
+        }
+    }
+
+
+    /*function for checking collisions' number in order to remove hearts
+    ,freezes the enemies and opens modal if game is over*/
+    checkLives() {
+        this.lives -= 1;
+        hearts.removeChild(hearts.children[0]);
+        if (this.lives === 0) {
+            this.image = 'images/ghost.png';
+            allEnemies.forEach(function(enemy) {
+                enemy.speed = 0;
+            });
+            openModal();
+        }
+    }
+
 }
-/*function for checking collisions' number in order to remove hearts
-,freezes the enemies and opens modal if game is over*/
-function checkLives() {
-    lives -= 1;
-    hearts.removeChild(hearts.children[0]);
-    if (lives === 0) {
-        player.sprite = 'images/ghost.png';
-        allEnemies.forEach(function(enemy) {
-            enemy.speed = 0;
-        });
-        openModal();
-    }
-}
-// Now write your own player class
-// This class requires an update(), render() and
-// a handleInput() method.
-const Player = function() {
-    this.x = 200;
-    this.y = 380;
-    this.sprite = 'images/char-boy.png';
-};
-Player.prototype.update = function(dt) {
-    //checks if player reaches water
-    if (this.y < 40) {
-        this.x = 200;
-        this.y = 380;
-    }
-    Player.prototype.render = function() {
-        ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
-    }
-};
-//function for player movement
-Player.prototype.handleInput = function(key) {
-    if (key === 'left' && this.x > 0) {
-        this.x -= 100;
-    } else if (key === 'right' && this.x < 400) {
-        this.x += 100;
-    } else if (key === 'up') {
-        this.y -= 80;
-    } else if (key === 'down' && this.y < 380) {
-        this.y += 80;
-    }
-}
+
+
+
 // Place the player object in a letiable called player
-let player = new Player;
+let player = new Player(200, 380, 'images/char-boy.png', 3);
+
+
 // This listens for key presses and sends the keys to your
 // Player.handleInput() method. You don't need to modify this.
 document.addEventListener('keyup', function(e) {
@@ -110,14 +139,20 @@ document.addEventListener('keyup', function(e) {
 /***********modal code*********************************/
 // Get modal element
 let modal = document.getElementById('gameOverModal');
+let winModal = document.getElementById('winningModal');
 // Listen for outside or inside click
 modal.addEventListener('click', modalClick);
+winModal.addEventListener('click', modalClick);
 // Function to open modal
 function openModal() {
     modal.style.display = 'block';
 }
+
+function openWinModal() {
+    winModal.style.display = 'block';
+}
 // Function to close modal and start new game if outside click
 function modalClick(e) {
-    modal.style.display = 'none';
-    location.reload()
+    this.style.display = 'none';
+    location.reload();
 }
